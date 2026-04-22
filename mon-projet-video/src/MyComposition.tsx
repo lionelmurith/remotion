@@ -133,7 +133,7 @@ export const MyComposition = () => {
           {/* Logo */}
           <div style={{ opacity: logoOpacity, transform: `scale(${logoScale})` }}>
             <Img
-              src={staticFile("logo.png")}
+              src={staticFile("logo.jpg")}
               style={{ width: 190, height: 190, objectFit: "contain" }}
             />
           </div>
