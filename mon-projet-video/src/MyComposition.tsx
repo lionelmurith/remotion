@@ -8,72 +8,83 @@ import {
   staticFile,
 } from "remotion";
 
+const BRAND_GOLD   = "#F1BE0F"; // sampled from logo
+const BRAND_VIOLET = "#6A1B9A";
+
 export const MyComposition = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // ── Timings (frames, 30fps, 5s = 150f) ──────────────────────────────────
-  const PHOTO_ENTER_END = 28;
-  const COLOR_POP_END   = 55;
-  const ZOOM_END        = 105;
-  const FADE_OUT_START  = 95;
+  // ── Timings (150f @ 30fps = 5s) ──────────────────────────────────────────
+  const FADE_IN_END     = 18;   // photo fully visible
+  const COLOR_POP_END   = 55;   // grayscale → color done
+  const PAN_END         = 88;   // pan sweep ends
+  const ZOOMOUT_START   = 78;   // crossfade to zoom-out starts
+  const ZOOMOUT_END     = 100;  // zoom-out fully visible
+  const FADE_OUT_START  = 103;
   const FADE_OUT_END    = 118;
-  const LOGO_START      = 112;
-  const BRAND_START     = 122;
-  const TAGLINE_START   = 132;
+  const LOGO_START      = 113;
+  const BRAND_START     = 124;
+  const TAGLINE_START   = 134;
 
-  // ── Photo: fade-in + slide up ────────────────────────────────────────────
-  const photoOpacity = interpolate(
+  // ── Grayscale → color ────────────────────────────────────────────────────
+  const grayscale = interpolate(frame, [0, FADE_IN_END, COLOR_POP_END], [1, 1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const brightness = interpolate(frame, [0, 10, FADE_IN_END], [1.6, 1.2, 1.0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const imageFilter = `grayscale(${grayscale}) brightness(${brightness})`;
+
+  // ── Layer 1 — Pan sweep: objectFit cover, sweeps left → right ────────────
+  const panOpacity = interpolate(
     frame,
-    [0, PHOTO_ENTER_END, FADE_OUT_START, FADE_OUT_END],
+    [0, FADE_IN_END, ZOOMOUT_START, ZOOMOUT_END],
     [0, 1, 1, 0],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
   );
+  // Sweep from left (0%) to right (100%)
+  const panPercent = interpolate(frame, [FADE_IN_END, PAN_END], [0, 100], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  // Subtle vertical float during pan
+  const floatY = Math.sin(frame * 0.045) * 6;
 
-  const slideY = interpolate(frame, [0, PHOTO_ENTER_END], [80, 0], {
+  // ── Layer 2 — Zoom-out: objectFit contain, full team visible ─────────────
+  const zoomOutOpacity = interpolate(
+    frame,
+    [ZOOMOUT_START, ZOOMOUT_END, FADE_OUT_START, FADE_OUT_END],
+    [0, 1, 1, 0],
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+  );
+  // Slight scale-in as it reveals
+  const zoomRevealScale = interpolate(frame, [ZOOMOUT_START, ZOOMOUT_END], [1.04, 1.0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  // ── Ken-Burns: zoom out 1.25 → 1.0 ──────────────────────────────────────
-  const photoScale = interpolate(frame, [0, ZOOM_END], [1.25, 1.0], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
-  // ── Subtle floating ──────────────────────────────────────────────────────
-  const floatY = Math.sin(frame * 0.045) * 7;
-  const floatX = Math.sin(frame * 0.028) * 4;
-
-  // ── Grayscale → color reveal ─────────────────────────────────────────────
-  const grayscale = interpolate(frame, [PHOTO_ENTER_END, COLOR_POP_END], [1, 0], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const brightness = interpolate(frame, [0, 18, PHOTO_ENTER_END], [1.6, 1.2, 1.0], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
-  // ── White flash transition ────────────────────────────────────────────────
+  // ── White flash transition ───────────────────────────────────────────────
   const whiteOverlay = interpolate(frame, [FADE_OUT_START, FADE_OUT_END], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  // ── Logo spring pop ───────────────────────────────────────────────────────
+  // ── Logo spring pop ──────────────────────────────────────────────────────
   const logoSpring = spring({
     fps,
     frame: Math.max(0, frame - LOGO_START),
     config: { damping: 16, stiffness: 130, mass: 0.7 },
   });
-  const logoScale = interpolate(logoSpring, [0, 1], [0.4, 1]);
+  const logoScale   = interpolate(logoSpring, [0, 1], [0.4, 1]);
   const logoOpacity = interpolate(frame, [LOGO_START, LOGO_START + 10], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  // ── Brand name ────────────────────────────────────────────────────────────
+  // ── Brand name ───────────────────────────────────────────────────────────
   const brandOpacity = interpolate(frame, [BRAND_START, BRAND_START + 14], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
@@ -83,7 +94,7 @@ export const MyComposition = () => {
     extrapolateRight: "clamp",
   });
 
-  // ── Tagline slide ─────────────────────────────────────────────────────────
+  // ── Tagline slide-in ─────────────────────────────────────────────────────
   const taglineOpacity = interpolate(frame, [TAGLINE_START, TAGLINE_START + 14], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
@@ -96,12 +107,9 @@ export const MyComposition = () => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#ffffff", overflow: "hidden" }}>
 
-      {/* ── Team photo ─────────────────────────────────────────────────── */}
+      {/* ── Layer 1: Pan sweep — portrait-cropped, sweeps left → right ──── */}
       <AbsoluteFill
-        style={{
-          opacity: photoOpacity,
-          transform: `translateY(${slideY + floatY}px) translateX(${floatX}px) scale(${photoScale})`,
-        }}
+        style={{ opacity: panOpacity, transform: `translateY(${floatY}px)` }}
       >
         <Img
           src={staticFile("team.jpg")}
@@ -109,18 +117,36 @@ export const MyComposition = () => {
             width: "100%",
             height: "100%",
             objectFit: "cover",
-            objectPosition: "center top",
-            filter: `grayscale(${grayscale}) brightness(${brightness})`,
+            objectPosition: `${panPercent}% 30%`,
+            filter: imageFilter,
           }}
         />
       </AbsoluteFill>
 
-      {/* ── White transition overlay ──────────────────────────────────── */}
+      {/* ── Layer 2: Zoom-out — full team visible (contain) ─────────────── */}
+      <AbsoluteFill
+        style={{
+          opacity: zoomOutOpacity,
+          transform: `scale(${zoomRevealScale})`,
+        }}
+      >
+        <Img
+          src={staticFile("team.jpg")}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            objectPosition: "center center",
+          }}
+        />
+      </AbsoluteFill>
+
+      {/* ── White transition overlay ─────────────────────────────────────── */}
       <AbsoluteFill
         style={{ backgroundColor: "#ffffff", opacity: whiteOverlay, pointerEvents: "none" }}
       />
 
-      {/* ── End card ─────────────────────────────────────────────────── */}
+      {/* ── End card ─────────────────────────────────────────────────────── */}
       {frame >= LOGO_START && (
         <AbsoluteFill
           style={{
@@ -133,21 +159,21 @@ export const MyComposition = () => {
             paddingRight: 60,
           }}
         >
-          {/* Logo */}
+          {/* Logo — bigger */}
           <div style={{ opacity: logoOpacity, transform: `scale(${logoScale})` }}>
             <Img
               src={staticFile("logo.jpg")}
-              style={{ width: 160, height: 160, objectFit: "contain" }}
+              style={{ width: 230, height: 230, objectFit: "contain" }}
             />
           </div>
 
-          {/* GS Global */}
+          {/* GS Global — exact logo gold */}
           <div style={{ opacity: brandOpacity, textAlign: "center" }}>
             <span
               style={{
-                fontSize: 64,
+                fontSize: 68,
                 fontWeight: 900,
-                color: "#C5A028",
+                color: BRAND_GOLD,
                 fontFamily: "Arial Black, Arial, sans-serif",
                 letterSpacing: 6,
                 textTransform: "uppercase",
@@ -162,7 +188,7 @@ export const MyComposition = () => {
             style={{
               width: lineWidth,
               height: 3,
-              backgroundColor: "#C5A028",
+              backgroundColor: BRAND_GOLD,
               opacity: brandOpacity,
               borderRadius: 2,
             }}
@@ -179,7 +205,7 @@ export const MyComposition = () => {
             <span
               style={{
                 fontSize: 38,
-                color: "#6A1B9A",
+                color: BRAND_VIOLET,
                 fontFamily: "Georgia, 'Times New Roman', serif",
                 fontStyle: "italic",
                 letterSpacing: 1,
