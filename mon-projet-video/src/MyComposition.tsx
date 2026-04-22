@@ -15,17 +15,17 @@ export const MyComposition = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // ── Timings (150f @ 30fps = 5s) ──────────────────────────────────────────
+  // ── Timings (240f @ 30fps = 8s) ──────────────────────────────────────────
   const FADE_IN_END     = 18;   // photo fully visible
   const COLOR_POP_END   = 55;   // grayscale → color done
-  const PAN_END         = 88;   // pan sweep ends
-  const ZOOMOUT_START   = 78;   // crossfade to zoom-out starts
-  const ZOOMOUT_END     = 100;  // zoom-out fully visible
-  const FADE_OUT_START  = 103;
-  const FADE_OUT_END    = 118;
-  const LOGO_START      = 113;
-  const BRAND_START     = 124;
-  const TAGLINE_START   = 134;
+  const PAN_END         = 168;  // pan sweep ends (~5.6s — slow sweep)
+  const ZOOMOUT_START   = 155;  // crossfade to zoom-out starts
+  const ZOOMOUT_END     = 180;  // zoom-out fully visible
+  const FADE_OUT_START  = 183;
+  const FADE_OUT_END    = 200;
+  const LOGO_START      = 195;
+  const BRAND_START     = 207;
+  const TAGLINE_START   = 218;
 
   // ── Grayscale → color ────────────────────────────────────────────────────
   const grayscale = interpolate(frame, [0, FADE_IN_END, COLOR_POP_END], [1, 1, 0], {
