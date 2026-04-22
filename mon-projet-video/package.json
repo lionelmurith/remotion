@@ -4,9 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "npx remotion studio",
+    "build": "npx remotion render",
+    "upgrade": "npx remotion upgrade"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@remotion/cli": "4.0.451",
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
+    "remotion": "4.0.451"
+  }
 }
